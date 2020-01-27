@@ -19,14 +19,15 @@ type Service struct {
 
 //Config representa as configurações de que vem do consul
 type Config struct {
-	DBHost     string `json:"db_host"`
-	DBName     string `json:"db_name"`
-	DBUser     string `json:"db_user"`
-	DBPassword string `json:"db_password"`
-	DBPort     string `json:"db_port"`
-	DBSchema   string `json:"db_schema"`
-	HTTPPort   string `json:"http_port"`
-	TTL        string `json:"ttl"`
+	DBHost      string `json:"db_host"`
+	DBName      string `json:"db_name"`
+	DBUser      string `json:"db_user"`
+	DBPassword  string `json:"db_password"`
+	DBPort      string `json:"db_port"`
+	DBSchema    string `json:"db_schema"`
+	HTTPPort    string `json:"http_port"`
+	HTTPAddress string `json:"http_address"`
+	TTL         string `json:"ttl"`
 }
 
 //New cria e configura um serviço
@@ -72,8 +73,9 @@ func (s *Service) RegisterService(healthcheckFunction func() error) error {
 	port, _ := strconv.Atoi(s.Config.HTTPPort)
 
 	def := &consul.AgentServiceRegistration{
-		Name: s.Name,
-		Port: port,
+		Name:    s.Name,
+		Address: s.Config.HTTPAddress,
+		Port:    port,
 		Check: &consul.AgentServiceCheck{
 			TTL: ttl.String(),
 		},
