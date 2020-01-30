@@ -3,9 +3,11 @@ package service
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"strconv"
 	"time"
 
+	"github.com/go-redis/redis"
 	consul "github.com/hashicorp/consul/api"
 )
 
@@ -15,6 +17,7 @@ type Service struct {
 	Config      Config
 	ConsulAgent *consul.Agent
 	ConsulKV    *consul.KV
+	RedisClient *redis.Client
 }
 
 //Config representa as configurações de que vem do consul
@@ -25,6 +28,7 @@ type Config struct {
 	DBPassword  string `json:"db_password"`
 	DBPort      string `json:"db_port"`
 	DBSchema    string `json:"db_schema"`
+	RedisServer string `json:"redis_server"`
 	HTTPPort    string `json:"http_port"`
 	HTTPAddress string `json:"http_address"`
 	TTL         string `json:"ttl"`
@@ -56,8 +60,26 @@ func New(name, configKey string) (*Service, error) {
 	}
 
 	service.Config = config
+	if os.Getenv("HTTP_PORT") != "" {
+		service.Config.HTTPPort = os.Getenv("HTTP_PORT")
+	}
+	if service.Config.HTTPPort == "" {
+		service.Config.HTTPPort = "80"
+	}
 
 	service.ConsulAgent = client.Agent()
+
+	if service.Config.RedisServer != "" {
+		service.RedisClient = redis.NewClient(&redis.Options{
+			Addr:     service.Config.RedisServer,
+			Password: "",
+			DB:       0,
+		})
+
+		if _, err := service.RedisClient.Ping().Result(); err != nil {
+			return service, fmt.Errorf("não foi possível estabelecer conexão com o redis. %v", err)
+		}
+	}
 
 	return service, nil
 }
