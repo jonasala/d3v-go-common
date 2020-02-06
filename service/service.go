@@ -13,11 +13,12 @@ import (
 
 //Service agrega as configurações de banco de dados (pgsql) e service discovery (consul)
 type Service struct {
-	Name        string
-	Config      Config
-	ConsulAgent *consul.Agent
-	ConsulKV    *consul.KV
-	RedisClient *redis.Client
+	Name         string
+	Config       Config
+	ConsulAgent  *consul.Agent
+	ConsulKV     *consul.KV
+	ConsulClient *consul.Client
+	RedisClient  *redis.Client
 }
 
 //Config representa as configurações de que vem do consul
@@ -39,6 +40,7 @@ func New(name, configKey string) (*Service, error) {
 	service := &Service{Name: name}
 
 	client, err := consul.NewClient(consul.DefaultConfig())
+	service.ConsulClient = client
 	if err != nil {
 		return service, fmt.Errorf("não foi possível conectar com o consul. %v", err)
 	}
