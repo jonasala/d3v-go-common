@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
 	"time"
 
 	"github.com/go-redis/redis"
@@ -112,7 +114,7 @@ func (s *Service) RegisterService(healthcheckFunction func() error) error {
 		Name:    s.Name,
 		Address: s.Config.HTTPAddress,
 		Port:    port,
-		Tags:    []string{"urlprefix-/" + s.Name},
+		Tags:    []string{"urlprefix-/" + s.Name + " strip=/" + s.Name},
 		Check: &consul.AgentServiceCheck{
 			TTL: ttl.String(),
 		},
@@ -137,6 +139,17 @@ func (s *Service) RegisterService(healthcheckFunction func() error) error {
 	}()
 
 	return nil
+}
+
+//GracefullyShutdown faz o desregistramento no consul (não funciona com watcher, não registre)
+func (s *Service) GracefullyShutdown() {
+	sign := make(chan os.Signal)
+	signal.Notify(sign, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-sign
+		s.ConsulAgent.ServiceDeregister(s.ID)
+		os.Exit(1)
+	}()
 }
 
 //IPAddr recupera o endereco IP do serviço
