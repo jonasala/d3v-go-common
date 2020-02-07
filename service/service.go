@@ -125,14 +125,14 @@ func (s *Service) RegisterService(healthcheckFunction func() error) error {
 	go func() {
 		ticker := time.NewTicker(ttl / 2)
 		for range ticker.C {
-			status := "passing"
+			status := "pass"
 			output := ""
 			err := healthcheckFunction()
 			if err != nil {
-				status = "critical"
+				status = "fail"
 				output = err.Error()
 			}
-			s.ConsulAgent.UpdateTTL(s.ID, output, status)
+			s.ConsulAgent.UpdateTTL("service:"+s.ID, output, status)
 		}
 	}()
 
