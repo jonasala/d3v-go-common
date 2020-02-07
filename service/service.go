@@ -15,6 +15,7 @@ import (
 
 //Service agrega as configurações de banco de dados (pgsql) e service discovery (consul)
 type Service struct {
+	ID          string
 	Name        string
 	Config      Config
 	ConsulAgent *consul.Agent
@@ -38,7 +39,10 @@ type Config struct {
 
 //New cria e configura um serviço
 func New(name, configKey string) (*Service, error) {
-	service := &Service{Name: name}
+	service := &Service{
+		ID:   uuid.New(),
+		Name: name,
+	}
 
 	client, err := consul.NewClient(consul.DefaultConfig())
 	if err != nil {
@@ -104,7 +108,7 @@ func (s *Service) RegisterService(healthcheckFunction func() error) error {
 	port, _ := strconv.Atoi(s.Config.HTTPPort)
 
 	def := &consul.AgentServiceRegistration{
-		ID:      uuid.New(),
+		ID:      s.ID,
 		Name:    s.Name,
 		Address: s.Config.HTTPAddress,
 		Port:    port,
@@ -121,12 +125,14 @@ func (s *Service) RegisterService(healthcheckFunction func() error) error {
 	go func() {
 		ticker := time.NewTicker(ttl / 2)
 		for range ticker.C {
+			status := "passing"
+			output := ""
 			err := healthcheckFunction()
 			if err != nil {
-				s.ConsulAgent.FailTTL("service:"+s.Name, err.Error())
-			} else {
-				s.ConsulAgent.PassTTL("service:"+s.Name, "")
+				status = "critical"
+				output = err.Error()
 			}
+			s.ConsulAgent.UpdateTTL(s.ID, output, status)
 		}
 	}()
 
