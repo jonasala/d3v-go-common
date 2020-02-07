@@ -3,22 +3,23 @@ package service
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"os"
 	"strconv"
 	"time"
 
 	"github.com/go-redis/redis"
 	consul "github.com/hashicorp/consul/api"
+	"github.com/pborman/uuid"
 )
 
 //Service agrega as configurações de banco de dados (pgsql) e service discovery (consul)
 type Service struct {
-	Name         string
-	Config       Config
-	ConsulAgent  *consul.Agent
-	ConsulKV     *consul.KV
-	ConsulClient *consul.Client
-	RedisClient  *redis.Client
+	Name        string
+	Config      Config
+	ConsulAgent *consul.Agent
+	ConsulKV    *consul.KV
+	RedisClient *redis.Client
 }
 
 //Config representa as configurações de que vem do consul
@@ -40,7 +41,6 @@ func New(name, configKey string) (*Service, error) {
 	service := &Service{Name: name}
 
 	client, err := consul.NewClient(consul.DefaultConfig())
-	service.ConsulClient = client
 	if err != nil {
 		return service, fmt.Errorf("não foi possível conectar com o consul. %v", err)
 	}
@@ -62,6 +62,13 @@ func New(name, configKey string) (*Service, error) {
 	}
 
 	service.Config = config
+
+	ip, err := IPAddr()
+	if err != nil {
+		return service, fmt.Errorf("não foi possível determinar o ip para registrar este serviço. %v", err)
+	}
+	service.Config.HTTPAddress = ip.String()
+
 	if os.Getenv("HTTP_PORT") != "" {
 		service.Config.HTTPPort = os.Getenv("HTTP_PORT")
 	}
@@ -97,9 +104,11 @@ func (s *Service) RegisterService(healthcheckFunction func() error) error {
 	port, _ := strconv.Atoi(s.Config.HTTPPort)
 
 	def := &consul.AgentServiceRegistration{
+		ID:      uuid.New(),
 		Name:    s.Name,
 		Address: s.Config.HTTPAddress,
 		Port:    port,
+		Tags:    []string{"urlprefix-/" + s.Name},
 		Check: &consul.AgentServiceCheck{
 			TTL: ttl.String(),
 		},
@@ -122,4 +131,22 @@ func (s *Service) RegisterService(healthcheckFunction func() error) error {
 	}()
 
 	return nil
+}
+
+//IPAddr recupera o endereco IP do serviço
+func IPAddr() (net.IP, error) {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, addr := range addrs {
+		if ipnet, ok := addr.(*net.IPNet); ok && ipnet.IP.IsGlobalUnicast() {
+			if ipnet.IP.To4() != nil || ipnet.IP.To16() != nil {
+				return ipnet.IP, nil
+			}
+		}
+	}
+
+	return nil, nil
 }

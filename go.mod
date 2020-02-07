@@ -15,6 +15,7 @@ require (
 	github.com/mattn/go-sqlite3 v2.0.2+incompatible // indirect
 	github.com/onsi/ginkgo v1.10.1 // indirect
 	github.com/onsi/gomega v1.7.0 // indirect
+	github.com/pborman/uuid v1.2.0
 	github.com/stretchr/testify v1.4.0
 	github.com/volatiletech/inflect v0.0.0-20170731032912-e7201282ae8d // indirect
 	github.com/volatiletech/null v8.0.0+incompatible

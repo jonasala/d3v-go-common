@@ -13,4 +13,9 @@ func TestNew(t *testing.T) {
 	pong, err := service.RedisClient.Ping().Result()
 	assert.Equal(t, "PONG", pong)
 	assert.NoError(t, err)
+
+	err = service.RegisterService(func() error {
+		return nil
+	})
+	assert.NoError(t, err)
 }
