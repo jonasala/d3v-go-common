@@ -38,6 +38,7 @@ type Config struct {
 	HTTPAddress  string `json:"http_address"`
 	FabioAddress string `json:"fabio_address"`
 	TTL          string `json:"ttl"`
+	JWTSecret    string `json:"jwt_secret"`
 }
 
 //New cria e configura um serviço
