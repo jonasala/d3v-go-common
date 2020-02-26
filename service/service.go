@@ -27,18 +27,19 @@ type Service struct {
 
 //Config representa as configurações de que vem do consul
 type Config struct {
-	DBHost       string `json:"db_host"`
-	DBName       string `json:"db_name"`
-	DBUser       string `json:"db_user"`
-	DBPassword   string `json:"db_password"`
-	DBPort       string `json:"db_port"`
-	DBSchema     string `json:"db_schema"`
-	RedisServer  string `json:"redis_server"`
-	HTTPPort     string `json:"http_port"`
-	HTTPAddress  string `json:"http_address"`
-	FabioAddress string `json:"fabio_address"`
-	TTL          string `json:"ttl"`
-	JWTSecret    string `json:"jwt_secret"`
+	DBHost             string `json:"db_host"`
+	DBName             string `json:"db_name"`
+	DBUser             string `json:"db_user"`
+	DBPassword         string `json:"db_password"`
+	DBPort             string `json:"db_port"`
+	DBSchema           string `json:"db_schema"`
+	RedisServer        string `json:"redis_server"`
+	HTTPPort           string `json:"http_port"`
+	HTTPAddress        string `json:"http_address"`
+	FabioAddress       string `json:"fabio_address"`
+	TTL                string `json:"ttl"`
+	JWTSecret          string `json:"jwt_secret"`
+	RefreshTokenSecret string `json:"refresh_token_secret"`
 }
 
 //New cria e configura um serviço
