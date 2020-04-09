@@ -48,8 +48,12 @@ func New(name, configKey string) (*Service, error) {
 		ID:   uuid.New(),
 		Name: name,
 	}
+	consulConfig := consul.DefaultConfig()
+	if consulAddr := os.Getenv("CONSUL_ADDR"); consulAddr != "" {
+		consulConfig.Address = consulAddr
+	}
 
-	client, err := consul.NewClient(consul.DefaultConfig())
+	client, err := consul.NewClient(consulConfig)
 	if err != nil {
 		return service, fmt.Errorf("não foi possível conectar com o consul. %v", err)
 	}
