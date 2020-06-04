@@ -15,19 +15,33 @@ func NullableStructToMap(s interface{}) (map[string]interface{}, error) {
 	}
 
 	validFields := map[string]interface{}{}
+	loadFields(v, &validFields)
 
+	return validFields, nil
+}
+
+func loadFields(v reflect.Value, fields *map[string]interface{}) {
 	t := v.Type()
 	for i := 0; i < v.NumField(); i++ {
 		f := t.Field(i)
+
 		if tag, _ := f.Tag.Lookup("db"); tag != "" && tag != "-" {
 			if strings.HasPrefix(f.Type.String(), "null.") {
 				if valid := v.Field(i).FieldByName("Valid").Bool(); valid {
-					validFields[tag] = v.Field(i).Field(0).Interface()
+					(*fields)[tag] = v.Field(i).Field(0).Interface()
 				}
 			} else {
-				validFields[tag] = v.Field(i).Interface()
+				(*fields)[tag] = v.Field(i).Interface()
+			}
+		} else {
+			nf := v.Field(i)
+			if nf.Kind() == reflect.Ptr {
+				nf = nf.Elem()
+			}
+
+			if nf.Kind() == reflect.Struct {
+				loadFields(nf, fields)
 			}
 		}
 	}
-	return validFields, nil
 }
