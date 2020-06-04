@@ -33,7 +33,7 @@ func loadFields(v reflect.Value, fields *map[string]interface{}) {
 			} else {
 				(*fields)[tag] = v.Field(i).Interface()
 			}
-		} else {
+		} else if tag != "-" {
 			nf := v.Field(i)
 			if nf.Kind() == reflect.Ptr {
 				nf = nf.Elem()
