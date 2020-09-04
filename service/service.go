@@ -3,6 +3,7 @@ package service
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net"
 	"os"
 	"os/signal"
@@ -17,12 +18,13 @@ import (
 
 //Service agrega as configurações de banco de dados (pgsql) e service discovery (consul)
 type Service struct {
-	ID          string
-	Name        string
-	Config      Config
-	ConsulAgent *consul.Agent
-	ConsulKV    *consul.KV
-	RedisClient *redis.Client
+	ID             string
+	Name           string
+	Config         Config
+	ConsulAgent    *consul.Agent
+	ConsulKV       *consul.KV
+	RedisClient    *redis.Client
+	SpecificConfig map[string]interface{}
 }
 
 //Config representa as configurações de que vem do consul
@@ -75,6 +77,16 @@ func New(name, configKey string) (*Service, error) {
 	}
 
 	service.Config = config
+
+	//configurações específicas do serviço
+	pair, _, err = service.ConsulKV.Get("config/"+name, nil)
+	if err != nil {
+		log.Printf("problemas ao recuperar a chave de config específica %v. %v\n", name, err)
+	} else if pair == nil {
+		log.Printf("chave de config específica %v inexistente", name)
+	} else if err := json.Unmarshal(pair.Value, &service.SpecificConfig); err != nil {
+		log.Printf("a chave de config específica %v não é um json válido. %v", name, err)
+	}
 
 	ip, err := IPAddr()
 	if err != nil {
