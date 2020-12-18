@@ -88,11 +88,15 @@ func New(name, configKey string) (*Service, error) {
 		log.Printf("a chave de config específica %v não é um json válido. %v", name, err)
 	}
 
-	ip, err := IPAddr()
-	if err != nil {
-		return service, fmt.Errorf("não foi possível determinar o ip para registrar este serviço. %v", err)
+	if mode := os.Getenv("DOCKER_MODE"); mode == "dev" {
+		service.Config.HTTPAddress = "host.docker.internal"
+	} else {
+		ip, err := IPAddr()
+		if err != nil {
+			return service, fmt.Errorf("não foi possível determinar o ip para registrar este serviço. %v", err)
+		}
+		service.Config.HTTPAddress = ip.String()
 	}
-	service.Config.HTTPAddress = ip.String()
 
 	if os.Getenv("HTTP_PORT") != "" {
 		service.Config.HTTPPort = os.Getenv("HTTP_PORT")
